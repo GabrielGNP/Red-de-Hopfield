@@ -1,0 +1,2 @@
+pip install pyinstaller
+pyinstaller --onefile --add-data "datasets;datasets" Nhhopfield.py

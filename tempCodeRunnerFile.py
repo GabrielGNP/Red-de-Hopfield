@@ -1,0 +1,8 @@
+    print(f"dataset usado: {Fore.GREEN}dataset{datasetSelected}")
+                print(f"ruido agregado: {Fore.GREEN}{lvlNoice}")
+                print(f"Cantidad de iteraciones: {Fore.GREEN}{Cnt_Iteraciones}")
+                print()
+                print()
+                print("para controlar el menú ↓ y ↑")
+                print('Pulse "Enter" para elejir')
+                print('"Esc o salir" para salir del programa')
