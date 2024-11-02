@@ -1,2 +1,7 @@
+# Para instalar las dependencias
+pip install -r requirements.txt
+
+
+# Para crear el ejecutable
 pip install pyinstaller
-pyinstaller --onefile --add-data "datasets;datasets" Nhhopfield.py
+pyinstaller --onefile --add-data "datasets;datasets" Nnhopfield.py
