@@ -89,14 +89,23 @@ def loadDatasetsCsv(file_path):
 # Funcion de Carga de Input
 def loadInputCsv(file_path):
     matrix = []
+    found_first_matrix = False  # Bandera para identificar el primer patrón
     
     try:
         with open(file_path, 'r') as file:
             reader = csv.reader(file)
             
             for row in reader:
-                # Ignora filas vacías o identificadores de matrices
-                if row and "Matrix" not in row[0]:
+                # Verifica si la fila contiene "Matrix"
+                if row and "Matrix" in row[0]:
+                    # Si ya se ha encontrado el primer patrón, se rompe el bucle
+                    if found_first_matrix:
+                        break
+                    found_first_matrix = True  # Marca que el primer patrón fue encontrado
+                    continue
+                
+                # Ignora filas vacías o las filas con identificador de matriz
+                if row and found_first_matrix:
                     try:
                         matrix.append([int(x) for x in row])
                     except ValueError:
@@ -179,13 +188,19 @@ class redHopfield():
   # Este método entrena la red para almacenar patrones, ajustando los pesos sinápticos de acuerdo a los patrones proporcionados.
   # data: Es un conjunto de patrones que la red debe memorizar.
   # Entrenamiento: Se basa en la regla de Hebb, donde los pesos se ajustan en función del producto de las salidas de dos neuronas. Esto hace que los patrones se "almacenen" en la red.
-  def train(self,data):
-    Pval = data.shape[0] # Número de patrones
-    data = data.reshape(Pval,1,-1).squeeze() # Asegura que los datos estén en la forma correcta
-    nfeat = data.shape[1] # Número de neuronas o características
-    for it1 in range(0,self.w_ij.shape[0]):
-      for it2 in range(it1+1,self.w_ij.shape[1]): # Actualiza los pesos sinápticos utilizando el producto punto entre neuronas
-        self.w_ij[it1,it2] = self.w_ij[it2,it1] = (1/nfeat)* np.dot(data.T[it1],data.T[it2])
+  def train(self, data):
+    # Aplanar cada patrón en data
+    data = np.array([pattern.flatten() for pattern in data])
+
+    Pval = data.shape[0]  # Número de patrones
+    nfeat = data.shape[1]  # Número de neuronas o características
+
+    # Ajustamos los pesos sinápticos usando los patrones en data
+    for it1 in range(self.w_ij.shape[0]):
+        for it2 in range(it1 + 1, self.w_ij.shape[1]):
+            # Calculamos el producto punto entre neuronas para los pesos
+            self.w_ij[it1, it2] = self.w_ij[it2, it1] = (1 / nfeat) * np.dot(data.T[it1], data.T[it2])
+
 
 
   # Este método intenta recuperar un patrón a partir de una entrada. Es una variante que probablemente tenga algunos problemas (por eso el nombre "BAD").
@@ -238,21 +253,36 @@ else:
 def startHopfield():
     clear_screen()
     dataOK = True
-
+    infoFail = ""
     inputData = loadInputCsv(input_path)
     if inputData.size == 0:
-        print("   El array de entrada está vacío o no se pudo cargar correctamente.")
+        infoFail = infoFail + "   El input está vacío o no se pudo cargar correctamente.\n"
+        # print("   El array de entrada está vacío o no se pudo cargar correctamente.")
         dataOK = False
     else:
         inputData = inputData*2-1
 
     datasetUsed = loadDatasetsCsv(dataset_path)
     if datasetUsed.size == 0:
-        print("   El array de entrada está vacío o no se pudo cargar correctamente.")
+        infoFail = infoFail + "   El dataset está vacío o no se pudo cargar correctamente.\n"
+        # print("   El array de entrada está vacío o no se pudo cargar correctamente.")
         dataOK = False
     else:
         datasetUsed = datasetUsed*2-1  
 
+    if dataOK:
+        for idx, matrix in enumerate(datasetUsed):
+            if matrix.shape != datasetUsed[0].shape:
+                infoFail = infoFail + "   No todos los patrones del dataset tienen el mismo tamaño.\n"
+                dataOK = False
+                break
+
+    if dataOK:
+        for idx, matrix in enumerate(datasetUsed):
+            if matrix.shape != inputData.shape:
+                infoFail = infoFail + "   El input y los datasets tienen tamaños distintos.\n"
+                dataOK = False
+                break
 
     # imagein, imageinNoice e imagepred se usarán para almacenar la imagen input, imágene con ruido y la prediccion hechas por la red.
     # imagenin para la imagen input.
@@ -314,7 +344,8 @@ def startHopfield():
 
     else:
         print("")
-        print("No se puede realizar la ejecución porque los datos no han podido ser cargados")
+        print("No se puede realizar la ejecución porque hay un problema con los datos:")
+        print(infoFail)
 
     input("---Presione Enter para continuar---")
 
@@ -349,6 +380,12 @@ def optionSelectDataset():
             for i, option in enumerate(optionsSelectDatasetMenu):
                 prefix = Fore.BLACK + Back.WHITE + "-> " if i == selected_index else "   "
                 print(f"{prefix}{option}")
+            print()
+            print()
+            print("flecha ↓ para cambiar")
+            print("flecha ↑ para cambiar")
+            print("flecha Enter para confirmar")
+            print("flecha Esc para salir")
 
             key = get_key_windows()
             if key == b'\xe0':  # Tecla especial
@@ -371,7 +408,6 @@ def optionSelectDataset():
                     datasetSelected = "1"
                     break
             elif key == b'\x1b':  # Escape
-                datasetSelected = "1"
                 break
     else:  # Para Linux o macOS
         def wrapper(stdscr):
@@ -420,10 +456,13 @@ def optionChangeNoice():
             clear_screen()
             print("Cuanto ruido quiere agregar a la imagen?")
             print("            " + str(noice) + "%")
+            print()
+            print()
             print("flecha ← para reducir 1")
             print("flecha → para aumentar 1")
             print("flecha ↓ para reducir 10")
             print("flecha ↑ para aumentar 10")
+            print("flecha Enter o Esc para salir")
             
             key = get_key_windows()
             if key == b'\xe0':  # Tecla especial
@@ -453,6 +492,7 @@ def optionChangeNoice():
                 print("flecha → para aumentar 1")
                 print("flecha ↓ para reducir 10")
                 print("flecha ↑ para aumentar 10")
+                print("flecha Enter o Esc para salir")
 
                 key = get_key_windows()
                 if key == b'\xe0':  # Tecla especial
@@ -482,11 +522,14 @@ def optionChangeIterations():
             clear_screen()
             print("Cuantas iteraciones máximas tendrá?")
             print("            " + str(Cnt_Iteraciones))
+            print()
+            print()
             print("flecha ← para reducir 10")
             print("flecha → para aumentar 10")
             print("flecha ↓ para reducir 100")
             print("flecha ↑ para aumentar 100")
-            
+            print("flecha Enter o Esc para salir")
+
             key = get_key_windows()
             if key == b'\xe0':  # Tecla especial
                 key = msvcrt.getch()
@@ -513,7 +556,7 @@ def optionChangeIterations():
                 print("flecha → para aumentar 10")
                 print("flecha ↓ para reducir 100")
                 print("flecha ↑ para aumentar 100")
-
+                print("flecha Enter o Esc para salir")
                 key = get_key_windows()
                 if key == b'\xe0':  # Tecla especial
                     key = msvcrt.getch()
