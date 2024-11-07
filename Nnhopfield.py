@@ -64,7 +64,7 @@ def loadDatasetsCsv(file_path):
             for row in reader:
                 if not row:  # Si la fila está vacía, es el fin de una matriz
                     if current_matrix:
-                        matrices.append(current_matrix)
+                        matrices.append(current_matrix) 
                         current_matrix = []
                 elif "Matrix" not in row[0]:  # Evita las líneas de identificación
                     try:
@@ -159,12 +159,12 @@ class redHopfield():
   # n_memory: Representa el número de patrones que deseas almacenar. Si el número de patrones supera cierta capacidad (determinado por una fórmula basada en el número de neuronas), el código emite una advertencia de que la red puede no funcionar correctamente.
   # self.w_ij: Es la matriz de pesos sinápticos, que controla cómo las neuronas están conectadas entre sí.
   # self.yout: Representa el estado de salida actual de las neuronas (inicialmente, todas las salidas son 0).
-  def __init__(self,n_neurons,n_memory=0):
+  def __init__(self,n_neurons,n_memory=3):
     self.n_neurons = n_neurons
     if(n_memory!=None):
       check = n_neurons/(2*np.log(n_neurons)) # condición teórica para la capacidad de almacenamiento de las redes de Hopfield.
       if check <= n_memory:
-        print("No se cumple la expresion de almacenamiento con 1% de error")
+        print("No se cumple la condición teórica de capacidad de almacenamiento")
     self.w_ij = np.zeros((self.n_neurons,self.n_neurons))  # Inicializa la matriz de pesos
     self.yout = np.zeros(self.n_neurons)  # Inicializa las salidas de las neuronas
 
@@ -301,7 +301,7 @@ def startHopfield():
         # Se crea una instancia de la clase redHopfield, que es la red de Hopfield en sí.
         # hay que tener en cuenta que todos los datos (matrices) del dataset tienen el mismo tamaño.
         # El argumento dataset1.shape[1]*dataset1.shape[2] indica el número de neuronas que tendrá la red. cantidad de filas por cantidad de columnas
-        net = redHopfield(datasetUsed.shape[1]*datasetUsed.shape[2])
+        net = redHopfield(datasetUsed.shape[1]*datasetUsed.shape[2],datasetUsed.shape[0])
         # Se llama al método train() de la clase redHopfield para entrenar la red usando el conjunto de datos datasetUsed.
         # datasetUsed contiene los patrones que quieres almacenar en la red. Estos patrones son los que la red de Hopfield aprenderá y tratará de recordar.
         net.train(datasetUsed)
@@ -360,13 +360,16 @@ def startHopfield():
 # Inicializa colorama
 init(autoreset=True)
 
+# función para detectar las teclas en window
 def get_key_windows():
     return msvcrt.getch()
 
+# función para detectar las teclas en linux
 def get_key_unix(stdscr):
     return stdscr.getch()
 
-# Funciones de opciones
+# ================ Funciones de opciones del menú ================
+# función de opción de seleccionar dataset
 def optionSelectDataset():
     global dataset_path
     global input_path
@@ -447,7 +450,7 @@ def optionSelectDataset():
     dataset_path = os.path.join(base_path, 'datasets', "dataset"+datasetSelected, "dataset"+datasetSelected+'.csv')
     input_path = os.path.join(base_path, 'datasets', "dataset"+datasetSelected, "input"+datasetSelected+'.csv')
 
-
+# función de cambiar el ruido
 def optionChangeNoice():
     global lvlNoice
     noice = lvlNoice * 100
@@ -515,6 +518,7 @@ def optionChangeNoice():
     
     lvlNoice = noice/100
 
+# función de cambiar la cantidad de iteraciones
 def optionChangeIterations():
     global Cnt_Iteraciones
     if platform.system() == 'Windows':
@@ -574,11 +578,11 @@ def optionChangeIterations():
                     break
         curses.wrapper(wrapper)
 
-
+# función para iniciar la ejecución de la red de Hopfield
 def optionStartHopfield():
     startHopfield()
 
-
+# función principal del menús
 def main_menu():
     # Opciones del menú
     optionsMainMenu = ["Elegir Dataset", "Cambiar ruido agregado al input", "Cambiar cantidad de iteraciones máximas", "Ejecutar Hopfield", "Salir"]
